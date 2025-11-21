@@ -1,0 +1,116 @@
+#include <IRremote.h>
+
+int ModoSwitch = 5; //Entrada de modo de estado
+
+int SIR; //Distancia del objeto
+
+int LDR = A0; //valor analogica de dia o de noche
+float voltaje=0; //Voltaje de la LDR
+int sensorValue=0;
+#define Boton_POWER 0x12 //Valor del boton POWER del control remoto
+
+int SENSOR = 11; //Salida del VS1838b
+int LEDROJO = 2; //led rojo del led RGB
+int LEDVERDE = 3; //led verde del led RGB
+int LEDAZUL = 4; //led azul del led RGB
+
+int FocoEncendido = 8; //Salida del foco
+
+void setup() {
+  Serial.begin(9600);
+  IrReceiver.begin(SENSOR, ENABLE_LED_FEEDBACK);
+  pinMode(LEDROJO, OUTPUT);
+  pinMode(LEDVERDE, OUTPUT);
+  pinMode(LEDAZUL, OUTPUT);
+  pinMode(ModoSwitch, INPUT);
+  pinMode(FocoEncendido, OUTPUT);
+}
+
+void loop() {
+
+  int Modo = digitalRead(ModoSwitch);
+
+  Serial.println();
+
+  //Modo Automatico
+  if(Modo){
+    Serial.println("Modo Automatico");
+    Serial.println(Modo);
+    //fotodiodo
+    SIR = analogRead(A1);
+    
+    Serial.print("Medicion= ");
+    Serial.print(SIR);
+    Serial.println();
+
+    //LDR
+    sensorValue = analogRead(LDR); // Lee el valor del pin A0 de la fotoresistencia
+    voltaje = sensorValue * (5.0 /1023.0);  // Calcula el voltaje
+    Serial.print("Voltaje: ");
+    Serial.print(voltaje);
+    Serial.println(" V");
+    
+    Serial.println();
+
+    //Condicion del led RGB, segun el voltaje de la fotorresistencia
+    if(voltaje>4.97){
+      //TOTALMENTE NOCHE
+      digitalWrite(LEDVERDE, HIGH);
+      digitalWrite(LEDROJO, LOW);
+      digitalWrite(LEDAZUL, LOW);
+
+      //amarillo
+    } else if(voltaje>2.5 && voltaje<4.5){
+      digitalWrite(LEDVERDE, HIGH);
+      digitalWrite(LEDROJO, HIGH);
+      digitalWrite(LEDAZUL, LOW);
+
+      //Naranja
+    } else if(voltaje>1.6 && voltaje<2.5){
+      digitalWrite(LEDVERDE, LOW);
+      digitalWrite(LEDROJO, LOW);
+      digitalWrite(LEDAZUL, HIGH);
+
+      //Totalmente de dia
+    } else if(voltaje<2){
+      digitalWrite(LEDVERDE, LOW);
+      digitalWrite(LEDROJO, HIGH);
+      digitalWrite(LEDAZUL, LOW);
+
+    }
+
+    //Modo automatico, se enciende el foco
+    if(voltaje>2.5 && SIR<500){
+      digitalWrite(FocoEncendido, HIGH);
+      Serial.println("Foco encendido ");
+    } else {
+      //Se apaga el foco
+      digitalWrite(FocoEncendido, LOW);
+      Serial.println("Foco apagado ");
+    }
+
+     //Modo Manual
+  } else {
+    Serial.println("Modo Manual");
+    Serial.println(Modo);
+    if(IrReceiver.decode()){
+      Serial.println(IrReceiver.decodedIRData.command, HEX); //Se muestra el codigo en Hex del boton
+
+      //En caso de recibir la señal del boton power, encendera o apagara el foco
+      if(IrReceiver.decodedIRData.command == Boton_POWER){
+        Serial.println("Boton POWER oprimido");
+        digitalWrite(FocoEncendido, !digitalRead(FocoEncendido));
+      }
+      IrReceiver.resume();
+    }
+    if(FocoEncendido){
+      Serial.println("Foco encendido");
+    } else {
+      Serial.println("Foco apagado");
+    }
+
+  }
+  Serial.println();
+  Serial.println();
+  delay(500);
+}

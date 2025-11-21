@@ -66,13 +66,13 @@ void loop() {
       digitalWrite(LEDAZUL, LOW);
 
       //Naranja
-    } else if(voltaje>1.6 && voltaje<2.5){
+    } else if(voltaje>2 && voltaje<2.5){
       digitalWrite(LEDVERDE, LOW);
       digitalWrite(LEDROJO, LOW);
       digitalWrite(LEDAZUL, HIGH);
 
       //Totalmente de dia
-    } else if(voltaje<2){
+    } else if(voltaje<1.7){
       digitalWrite(LEDVERDE, LOW);
       digitalWrite(LEDROJO, HIGH);
       digitalWrite(LEDAZUL, LOW);
